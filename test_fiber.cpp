@@ -1,6 +1,7 @@
 #include <iostream>
 #include "fiber.h"
 #include "thread.h"
+#include "scheduler.h"
 
 void run_in_fiber() {
     std::cout << "run_in_fiber begin";
@@ -13,27 +14,21 @@ void test_fiber() {
     std::cout << "main begin -1" << std::endl;
     {
         sylar::Fiber::GetThis();
-        std::cout << "main begin";
+        std::cout << "main begin" << std::endl;
         sylar::Fiber::ptr fiber(new sylar::Fiber(run_in_fiber));
         fiber->swapIn();
-        std::cout << "main after swapIn";
+        std::cout << "main after swapIn" << std::endl;
         fiber->swapIn();
-        std::cout << "main after end";
+        std::cout << "main after end" << std::endl;
         fiber->swapIn();
     }
-    std::cout << "main after end2";
+    std::cout << "main after end2" << std::endl;
 }
 
 int main(int argc, char** argv) {
-    sylar::Thread::SetName("main");
-
-    std::vector<sylar::Thread::ptr> thrs;
-    for(int i = 0; i < 2; ++i) {
-        thrs.push_back(sylar::Thread::ptr(
-                    new sylar::Thread(&test_fiber, "name_" + std::to_string(i))));
-    }
-    // for(auto i : thrs) {
-    //     i->join();
-    // }
+    sylar::Scheduler sc(3, false, "test");
+    sc.start();
+    sc.schedule(&test_fiber);
+    sc.stop();
     return 0;
 }

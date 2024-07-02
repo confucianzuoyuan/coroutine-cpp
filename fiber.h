@@ -154,7 +154,7 @@ private:
     /// 协程id
     uint64_t m_id = 0;
     /// 协程运行栈大小
-    uint32_t m_stacksize = 0;
+    uint32_t m_stacksize = 1024;
     /// 协程状态
     State m_state = INIT;
     /// 协程上下文

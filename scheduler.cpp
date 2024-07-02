@@ -46,6 +46,7 @@ Fiber* Scheduler::GetMainFiber() {
 }
 
 void Scheduler::start() {
+    std::cout << "scheduler start" << std::endl;
     MutexType::Lock lock(m_mutex);
     if(!m_stopping) {
         return;

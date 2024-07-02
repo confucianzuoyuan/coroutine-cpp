@@ -4,7 +4,7 @@
 namespace sylar {
 
 static thread_local Thread* t_thread = nullptr;
-static thread_local std::string t_thread_name = "UNKNOW";
+static thread_local std::string t_thread_name = "UNKNOWN";
 
 Thread* Thread::GetThis() {
     return t_thread;
@@ -28,7 +28,7 @@ Thread::Thread(std::function<void()> cb, const std::string& name)
     :m_cb(cb)
     ,m_name(name) {
     if(name.empty()) {
-        m_name = "UNKNOW";
+        m_name = "UNKNOWN";
     }
     int rt = pthread_create(&m_thread, nullptr, &Thread::run, this);
     if(rt) {

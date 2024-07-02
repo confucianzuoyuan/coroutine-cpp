@@ -1,6 +1,7 @@
 #include "fiber.h"
 #include "scheduler.h"
 #include <atomic>
+#include <assert.h>
 
 namespace sylar {
 
@@ -33,19 +34,27 @@ uint64_t Fiber::GetFiberId() {
 Fiber::Fiber() {
     m_state = EXEC;
     SetThis(this);
-    getcontext(&m_ctx);
+    if (getcontext(&m_ctx)) {
+        assert(false);
+    }
 
     ++s_fiber_count;
+
+    std::cout << "Fiber::Fiber main" << std::endl;
 }
 
 Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool use_caller)
     :m_id(++s_fiber_id)
     ,m_cb(cb) {
     ++s_fiber_count;
-    m_stacksize = stacksize ? stacksize : 128 * 1024;
+    m_stacksize = 1024;
+
+    std::cout << "m_stacksize: " << m_stacksize << std::endl;
 
     m_stack = StackAllocator::Alloc(m_stacksize);
-    getcontext(&m_ctx);
+    if(getcontext(&m_ctx)) {
+        assert(false);
+    }
 
     m_ctx.uc_link = nullptr;
     m_ctx.uc_stack.ss_sp = m_stack;
@@ -56,6 +65,8 @@ Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool use_caller)
     } else {
         makecontext(&m_ctx, &Fiber::CallerMainFunc, 0);
     }
+
+    std::cout << "Fiber::Fiber id=" << m_id << std::endl;
 }
 
 Fiber::~Fiber() {
@@ -68,6 +79,10 @@ Fiber::~Fiber() {
             SetThis(nullptr);
         }
     }
+
+    std::cout << "Fiber::~Fiber id=" << m_id
+              << " total=" << s_fiber_count
+              << std::endl;
 }
 
 //重置协程函数，并重置状态
@@ -119,6 +134,7 @@ Fiber::ptr Fiber::GetThis() {
         return t_fiber->shared_from_this();
     }
     Fiber::ptr main_fiber(new Fiber);
+    assert(t_fiber == main_fiber.get());
     t_threadFiber = main_fiber;
     return t_fiber->shared_from_this();
 }
@@ -149,8 +165,14 @@ void Fiber::MainFunc() {
         cur->m_state = TERM;
     } catch (std::exception& ex) {
         cur->m_state = EXCEPT;
+        std::cout << "Fiber Except: " << ex.what()
+                  << " fiber_id=" << cur->getId()
+                  << std::endl;
     } catch (...) {
         cur->m_state = EXCEPT;
+        std::cout << "Fiber Except"
+                  << " fiber_id=" << cur->getId()
+                  << std::endl;
     }
 
     auto raw_ptr = cur.get();
@@ -166,8 +188,14 @@ void Fiber::CallerMainFunc() {
         cur->m_state = TERM;
     } catch (std::exception& ex) {
         cur->m_state = EXCEPT;
+        std::cout << "Fiber Except: " << ex.what()
+                  << " fiber_id=" << cur->getId()
+                  << std::endl;
     } catch (...) {
         cur->m_state = EXCEPT;
+        std::cout << "Fiber Except"
+                  << " fiber_id=" << cur->getId()
+                  << std::endl;
     }
 
     auto raw_ptr = cur.get();
